@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 import { useSpeechSynthesis } from 'react-speech-kit';
-import { Configuration, OpenAIApi } from 'openai';
+import { OpenAI } from 'openai';
+import './index.css';  // Asegúrate de importar el archivo CSS
 
 const Assistant = () => {
   const [response, setResponse] = useState('');
   const { speak } = useSpeechSynthesis();
   const { transcript, resetTranscript } = useSpeechRecognition();
 
-  const configuration = new Configuration({
-    apiKey: 'tu_clave_api', // Reemplaza con tu clave API
-  });
-
-  const openai = new OpenAIApi(configuration);
+  const openai = new OpenAI(process.env.REACT_APP_OPENAI_API_KEY);
 
   const handlePrompt = async () => {
     try {
-      const completion = await openai.createCompletion({
-        model: 'text-davinci-003',
+      const completion = await openai.complete({
+        engine: 'davinci',
         prompt: transcript,
-        max_tokens: 100,
+        maxTokens: 100,
       });
 
-      const result = completion.data.choices[0].text.trim();
+      const result = completion.choices[0].text.trim();
       setResponse(result);
       speak({ text: result });
       resetTranscript();
@@ -36,7 +33,8 @@ const Assistant = () => {
   };
 
   return (
-    <div>
+    <div className="container">
+      <h1>Mi Asistente</h1>
       <button onClick={handleListen}>Hablar</button>
       <button onClick={handlePrompt}>Enviar</button>
       <p>Transcripción: {transcript}</p>
