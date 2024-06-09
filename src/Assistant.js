@@ -1,27 +1,38 @@
 import React, { useState } from 'react';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import { useSpeechSynthesis } from 'react-speech-kit';
-import { OpenAI } from 'openai';
+import axios from 'axios';
 import './index.css';  // Asegúrate de importar el archivo CSS
 
 const Assistant = () => {
   const [response, setResponse] = useState('');
-  const { speak } = useSpeechSynthesis();
   const { transcript, resetTranscript } = useSpeechRecognition();
 
-  const openai = new OpenAI(process.env.REACT_APP_OPENAI_API_KEY);
+  const speak = (text) => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    synth.speak(utterance);
+  };
 
   const handlePrompt = async () => {
     try {
-      const completion = await openai.complete({
-        engine: 'davinci',
-        prompt: transcript,
-        maxTokens: 100,
-      });
+      const res = await axios.post(
+        'https://api.openai.com/v1/completions',
+        {
+          model: 'text-davinci-003',
+          prompt: transcript,
+          max_tokens: 100,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+          }
+        }
+      );
 
-      const result = completion.choices[0].text.trim();
+      const result = res.data.choices[0].text.trim();
       setResponse(result);
-      speak({ text: result });
+      speak(result);
       resetTranscript();
     } catch (error) {
       console.error(error);
